@@ -10,18 +10,18 @@ llm_configs:
     model: "Qwen/Qwen2.5-1.5B-Instruct"
   qwen2.5-3b:
     model: "Qwen/Qwen2.5-3B-Instruct"
+    model_path: "/home/cshdtian/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct/snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
   qwen2.5-math-7b:
     model: "Qwen/Qwen2.5-Math-7B-Instruct"
-    model_path: None
+    model_path: /home/cshdtian/.cache/huggingface/hub/models--Qwen--Qwen2.5-Math-7B-Instruct/snapshots/ef9926d75ab1d54532f6a30dd5e760355eb9aa4d
     max_token_length: 4096
-    temperature: 0.6
-  qwq-32b:
-    model: "Qwen/QWQ-32B-Instruct"
-    model_path: None
+  qwen2.5-14b:
+    model: "Qwen/Qwen2.5-14B-Instruct"
+  qwen2.5-32b:
+    model: "Qwen/Qwen2.5-32B-Instruct"
   qwen2.5-72b:
     model: "Qwen/Qwen2.5-72B-Instruct"
-    model_path: None
   deepseek-math-7b:
     model: "deepseek-ai/deepseek-math-7b-instruct"
-    model_path: None
+    model_path: "/home/cshdtian/.cache/huggingface/hub/models--deepseek-ai--deepseek-math-7b-instruct/snapshots/0a5828f800a36df0fd7f0ed581b983246c0677ff"
     max_token_length: 4096

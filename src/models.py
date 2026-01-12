@@ -4,13 +4,13 @@ import torch
 from vllm import LLM, SamplingParams
 from src.config_utils import LLMConfig
 from src.model_utils import TokenUsageTracker
-from typing import List
+from typing import List, Callable
 from src.utils import extract_answers, extract_answers_with_box
 
 
 class LanguageModel:
     """LLM class for the LLM model."""
-    def __init__(self, llm_config: LLMConfig, system_msg:str=None):
+    def __init__(self, llm_config: LLMConfig, extract_fn:Callable=None, system_msg:str=None):
         self.llm_config = llm_config
         
         if self.llm_config.model_path is not None and self.llm_config.model_path != "None":
@@ -25,10 +25,12 @@ class LanguageModel:
             tensor_parallel_size=getattr(self.llm_config, "tensor_parallel_size", 1),
             dtype=torch.bfloat16,
             max_model_len=getattr(self.llm_config, "max_token_length", 24064),
+            gpu_memory_utilization=0.85,
         )
         
         self.system_msg = system_msg
         self.token_usage_tracker = TokenUsageTracker()
+        self.extract_fn = extract_fn
         
     def __call__(self, prompts:List[str], answer_process:bool=True):
         # construct message
@@ -88,14 +90,13 @@ class LanguageModel:
             response = output.outputs[0].text
             if answer_process:
                 try:
-                    result = extract_answers(response)
+                    result = self.extract_fn(text=response)
                 except ValueError as e:
                     try:
                         answer = extract_answers_with_box(response)
                         result = {"think": response, "answer": answer}
                     except:
-                        result = {"think": "", "answer": ""}
-                        #print(response)
+                        result = {"think": response, "answer": ""}
                         print(f">>>>>> Error: Fail to parse answers.")
                 results_list.append(result)
             else:

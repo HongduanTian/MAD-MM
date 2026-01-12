@@ -26,6 +26,10 @@ def gsm8k_processor():
     
     if not os.path.exists(os.path.join(TARGET_DATA_DIR, "gsm8k")):
         os.makedirs(os.path.join(TARGET_DATA_DIR, "gsm8k"))
+    
+    for id, item in enumerate(all_data):
+        item["id"] = id
+        item["query"] = item.pop("question")
         
     dump_data_to_json(all_data, os.path.join(TARGET_DATA_DIR, "gsm8k", "gsm8k_test.jsonl"))
     

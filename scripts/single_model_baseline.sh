@@ -4,12 +4,12 @@
 # 1. CoT baseline
 # 2. CoT with self-consistency
 # 3. MAD baseline
-# 4. MAD naive (pruned)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # IMPORTANT:Parameters
 MODEL_NAME=$1
+SAVE_PATH=$2
 
 # Log settings
 LOG_DIR="$SCRIPT_DIR/logs"
@@ -20,11 +20,9 @@ failed_scripts=()
 start_time=$(date)
 
 scripts=(
-    "cot.sh"
-    "cot_sc.sh"
-    "mad.sh"
-    "mad_naive.sh"
-    "mad_ppl.sh"
+    "./base_scripts/cot.sh"
+    "./base_scripts/cot_sc.sh"
+    "./base_scripts/mad.sh"
 )
 
 echo "=========================================="
@@ -57,7 +55,7 @@ for script in "${scripts[@]}"; do
         echo "Start time: $script_start"
     } >> "$LOG_FILE"
     
-    bash "$SCRIPT_DIR/$script" "$MODEL_NAME"
+    bash "$SCRIPT_DIR/$script" "$MODEL_NAME" "$SAVE_PATH"
     exit_code=$?
     script_end=$(date)
     

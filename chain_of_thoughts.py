@@ -17,6 +17,9 @@ from src.config_utils import LLMConfig, load_configs_from_yaml
 from src.models import LanguageModel
 from src.reasoning_models import ChainOfThought
 from src.evaluator import MATHEval, MMLUProEval, AIMEEval, GSM8KEval
+from src.utils import extract_answers
+
+from functools import partial
 
 
 def main():
@@ -63,7 +66,7 @@ def main():
         raise ValueError(f"Invalid dataset: {args.dataset}")
     
     # Initialize an LLM as an agent
-    agent = LanguageModel(llm_configs)
+    agent = LanguageModel(llm_configs, extract_fn=partial(extract_answers, dataset_name=args.dataset))
     cot = ChainOfThought(agent, dataset_name=args.dataset, num_reasoning_paths=args.num_reasoning_paths, seed=args.seed, self_consistency=args.self_consistency)
     
     time_start = time.time()

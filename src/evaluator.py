@@ -75,7 +75,21 @@ class BaseEvaluator(ABC):
             summary["time_consumption"] = eval_time
             summary["average_time_per_sample"] = eval_time / len(self.data)
             
-            method_name = "mad_naive" if args.prune_strategy == "naive" else "mad_ppl" if args.prune_strategy == "ppl" else "mad"
+            #method_name = "mad_naive" if args.prune_strategy == "naive" elif "mad_ppl" if args.prune_strategy == "ppl" elif "mad"
+            if args.prune_strategy == "subjective":
+                if args.strict:
+                    method_name = "mad_strict_subjective"
+                else:
+                    method_name = "mad_subjective"
+            elif args.prune_strategy == "objective":
+                method_name = "mad_objective"
+            elif args.prune_strategy == "mixed":
+                method_name = "mad_mixed"
+            elif args.prune_strategy == "naive":
+                method_name = "mad"
+            else:
+                raise ValueError(f"Invalid prune strategy: {args.prune_strategy}")
+            
             file_name = f"{self.save_path}/{args.model_name}/{args.dataset}/{method_name}_{args.num_agents}agents_{args.max_round}rounds_seed{args.seed}"
             agent_pipeline.save_debate_log(file_name+"_debate_log.json")
             self.save_results(summary, file_name+".json")

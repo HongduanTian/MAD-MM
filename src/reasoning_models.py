@@ -2,8 +2,9 @@ import json
 
 import numpy as np
 
+from collections import Counter
 from src.models import LanguageModel
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Callable
 from src.prompts import *
 from src.utils import if_reach_consensus, extract_answers, dataset_2_process_fn, extract_with_label, normalize_answer
 
@@ -127,13 +128,17 @@ class MultiAgentDebate:
         
         # Later round of debate
         for round in range(1, self.max_round):
-            if self.prune_strategy == "naive":
+            if self.prune_strategy == "subjective":
                 new_contexts, masks = self._subjective_prune(questionsList, history[-1])
-            elif self.prune_strategy == "ppl":
+            elif self.prune_strategy == "objective":
                 new_contexts, masks = self._objective_prune(history[-1], perplexity_history[-1])
-            else:
+            elif self.prune_strategy == "mixed":
+                new_contexts, masks = self._mixed_prune(questionsList, history[-1], perplexity_history[-1])
+            elif self.prune_strategy == "naive":
                 new_contexts = history[-1]
                 masks = [[True, True, True]] * len(questionsList)
+            else:
+                raise ValueError(f"Invalid prune strategy: {self.prune_strategy}")
             
             resps_list, ppls_list, common_answers, consensus_flags = self._debate_with_contexts(round+1, questionsList, new_contexts, idsList)
             contexts = [list(item) for item in zip(*resps_list)]
@@ -155,6 +160,83 @@ class MultiAgentDebate:
                 "perplexity_history": perplexity_history,
             })
         return final_results
+
+    def _mixed_prune(self, questionList:List[str], contextList:List[List[str]], perplexityList:List[List[float]]) -> List[str]:
+        ret_contexts, ret_masks = [], []
+        _, masks = self._subjective_prune(questionList, contextList)
+        
+        for original_ctx, mask, ppl in zip(contextList, masks, perplexityList):
+            valid_candidates = []
+            for idx, (ctx, is_valid, ppl) in enumerate(zip(original_ctx, mask, ppl)):
+                if is_valid:
+                    valid_candidates.append({
+                        "index": idx,
+                        "context": ctx,
+                        "ppl": 1./ppl,
+                        "answer": ctx["answer"]
+                    })
+            # no valid candidates, drop all
+            if len(valid_candidates) == 0:
+                ret_contexts.append([])
+                ret_masks.append([False]*len(mask))
+                continue
+            
+            # only one valid candidate, keep it
+            if len(valid_candidates) == 1:
+                ret_contexts.append([valid_candidates[0]["context"]])
+                ret_masks.append(mask)
+                continue
+            
+            all_answers = [candidate["answer"] for candidate in valid_candidates]
+            if len(set(all_answers)) == len(all_answers):
+                if not self.strict:
+                    ret_contexts.append([candidate["context"] for candidate in valid_candidates])
+                    ret_masks.append(mask)
+                else:
+                    ret_contexts.append([])
+                    ret_masks.append([False]*len(mask))
+
+            else:
+                consensus_ans = Counter(all_answers).most_common(1)[0][0]
+                consensus_group = [candidate for candidate in valid_candidates if candidate["answer"] == consensus_ans]
+                ret_contexts.append([candidate["context"] for candidate in consensus_group])
+                
+                new_masks = [False]*len(mask)
+                for candidate in consensus_group:
+                    new_masks[candidate["index"]] = True
+                ret_masks.append(new_masks)
+            
+            # # Case： Consensus exists
+            # counter = Counter(all_answers)
+            # consensus_ans = counter.most_common(1)[0][0]    # find the consensus
+            
+            # consensus_group, non_consensus_group = [], []
+            # for candidate in valid_candidates:
+            #     if candidate["answer"] == consensus_ans:
+            #         consensus_group.append(candidate)
+            #     else:
+            #         non_consensus_group.append(candidate)
+            
+            # min_consensus_ppl = min([candidate["ppl"] for candidate in consensus_group])
+            
+            # if len(non_consensus_group) == 0:
+            #     min_non_consensus_ppl = float('inf')
+            # else:
+            #     min_non_consensus_ppl = min([candidate["ppl"] for candidate in non_consensus_group])
+            
+            # if min_consensus_ppl < min_non_consensus_ppl:
+            #     final_selection = consensus_group
+            # else:
+            #     final_selection = [min(non_consensus_group, key=lambda x: x["ppl"])]
+            
+            # ret_contexts.append([candidate["context"] for candidate in final_selection])
+            
+            # new_mask = [False]*len(mask)
+            # for candidate in final_selection:
+            #     new_mask[candidate["index"]] = True
+            # ret_masks.append(new_mask)
+            
+        return ret_contexts, ret_masks
 
     def _subjective_prune(self, questionList:List[str], contextList:List[List[str]]) -> List[str]:
 
@@ -198,7 +280,7 @@ class MultiAgentDebate:
             cur_selected_contexts = []
             sorted_ppl_list = sorted(pplList, reverse=True)
             threshold = sorted_ppl_list[len(pplList)//2]
-            cur_masks = [ppl < threshold for ppl in pplList]
+            cur_masks = [ppl > threshold for ppl in pplList]
             for ctx, mask in zip(ctxList, cur_masks):
                 if mask:
                     cur_selected_contexts.append(ctx)
@@ -294,7 +376,7 @@ def prompts_with_format(promptList:List[str], contextList:List[str]=None, reason
     """reasoning_mode: naive, cot, debate"""
     updated_prompts = []
     # if contextList is not provided, use cot mode
-    if reasoning_mode == "debate" and contextList is None:
+    if reasoning_mode == "debate" and (contextList is None or len(contextList) == 0):
         reasoning_mode = "cot"
     
     for idx, prompt in enumerate(promptList):
@@ -306,7 +388,7 @@ def prompts_with_format(promptList:List[str], contextList:List[str]=None, reason
         else:
             raise ValueError(f"Invalid reasoning mode: {reasoning_mode}")
         
-        new_prompt = prompt + f"\n\n### Response format (MUST be strictly followed) (DO NOT include any other formats except for the given XML format): \n<think>YOUR THINKING HERE</think>\n<answer>YOUR FINAL ANSWER ONLY, NO OTHER TEXT</answer>."
+        new_prompt = new_prompt + f"\n\n### Response format (MUST be strictly followed) (DO NOT include any other formats except for the given XML format): \n<think>YOUR THINKING HERE</think>\n<answer>YOUR FINAL ANSWER ONLY, NO OTHER TEXT</answer>."
         
         updated_prompts.append(new_prompt)
     return updated_prompts
