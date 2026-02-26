@@ -7,7 +7,7 @@
 
 This repository contains the source codes for reproducing the results of ICLR'26 paper: [**Multi-Agent Debate with Memory Masking**]().
 
-**Author List**: Hongduan Tian, Feng Liu, Zhanke Zhou, Tongliang Liu, Chengqi Zhang, Bo Han. 
+**Author List**: Hongduan Tian, Xiao Feng, Ziyuan Zhao, Xiangyu Zhu, Rolan Yan, Bo Han. 
 
 ## Introduction
 
