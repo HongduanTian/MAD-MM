@@ -14,7 +14,6 @@ for seed in "${seeds[@]}"; do
             python multi_agent_debate.py --model_name $model_name --dataset $ds --seed $seed --num_agents $num_agents --max_round 2 --prune_strategy "naive" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
             python multi_agent_debate.py --model_name $model_name --dataset $ds --seed $seed --num_agents $num_agents --max_round 2 --prune_strategy "subjective" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
             python multi_agent_debate.py --model_name $model_name --dataset $ds --seed $seed --num_agents $num_agents --max_round 2 --prune_strategy "objective" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
-            python multi_agent_debate.py --model_name $model_name --dataset $ds --seed $seed --num_agents $num_agents --max_round 2 --prune_strategy "mixed" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
         done
     done
 done
@@ -23,12 +22,10 @@ for num_agents in "${num_agents_arr[@]}"; do
     python multi_agent_debate.py --model_name $model_name --dataset "aime24" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "naive" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
     python multi_agent_debate.py --model_name $model_name --dataset "aime24" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "subjective" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
     python multi_agent_debate.py --model_name $model_name --dataset "aime24" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "objective" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
-    python multi_agent_debate.py --model_name $model_name --dataset "aime24" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "mixed" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
 done
 
 for num_agents in "${num_agents_arr[@]}"; do
     python multi_agent_debate.py --model_name $model_name --dataset "aime25" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "naive" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
     python multi_agent_debate.py --model_name $model_name --dataset "aime25" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "subjective" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
     python multi_agent_debate.py --model_name $model_name --dataset "aime25" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "objective" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
-    python multi_agent_debate.py --model_name $model_name --dataset "aime25" --seed 42 --num_agents $num_agents --max_round 2 --prune_strategy "mixed" --gpu_id $gpus --parallel --exp_name $exp_name --save_path $save_path
 done

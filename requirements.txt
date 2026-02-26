@@ -1,0 +1,11 @@
+datasets==3.1.0
+latex2sympy2==1.9.1
+numpy
+PyYAML
+regex==2024.11.6
+sympy==1.13.1
+torch
+tqdm==4.67.0
+vllm==0.6.3
+huggingface_hub>=0.27.0
+transformers==4.46.2

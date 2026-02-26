@@ -22,8 +22,8 @@ failed_scripts=()
 start_time=$(date)
 
 scripts=(
-    # "./base_scripts/mad_subjective.sh"
-    # "./base_scripts/mad_objective.sh"
+    "./base_scripts/mad_subjective.sh"
+    "./base_scripts/mad_objective.sh"
     "./base_scripts/mad_subjective_strict.sh"
 )
 

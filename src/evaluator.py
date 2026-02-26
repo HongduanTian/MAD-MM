@@ -74,8 +74,7 @@ class BaseEvaluator(ABC):
             print(f"Average time per sample: {eval_time / len(self.data)} seconds")
             summary["time_consumption"] = eval_time
             summary["average_time_per_sample"] = eval_time / len(self.data)
-            
-            #method_name = "mad_naive" if args.prune_strategy == "naive" elif "mad_ppl" if args.prune_strategy == "ppl" elif "mad"
+
             if args.prune_strategy == "subjective":
                 if args.strict:
                     method_name = "mad_strict_subjective"
@@ -83,8 +82,6 @@ class BaseEvaluator(ABC):
                     method_name = "mad_subjective"
             elif args.prune_strategy == "objective":
                 method_name = "mad_objective"
-            elif args.prune_strategy == "mixed":
-                method_name = "mad_mixed"
             elif args.prune_strategy == "naive":
                 method_name = "mad"
             else:
@@ -96,6 +93,31 @@ class BaseEvaluator(ABC):
             
             print("================================================")
             print(f"MAD ({args.prune_strategy} prune) with {args.num_agents} agents and {args.max_round} rounds")
+            print(f"Accuracy: {score}")
+            print(f"Total Tokens: {token_usage_summary['total_tokens']}")
+            print("================================================")
+        
+        elif agent_pipeline.__class__.__name__ == "SparseMultiAgentDebate":
+            score = np.mean([self.calculate_score(result["pred"], result["ground_truth"]) for result in results])
+            token_usage_summary = agent_pipeline.get_summary()
+            summary = {
+                "accuracy": score,
+                "token_usage_summary": token_usage_summary,
+                "results": results,
+            }
+            eval_time = time.time() - time_start
+            print(f"Evaluation time: {eval_time} seconds")
+            print(f"Average time per sample: {eval_time / len(self.data)} seconds")
+            summary["time_consumption"] = eval_time
+            summary["average_time_per_sample"] = eval_time / len(self.data)
+        
+            method_name = "sparse_mad"
+            file_name = f"{self.save_path}/{args.model_name}/{args.dataset}/{method_name}_seed{args.seed}"
+            agent_pipeline.save_debate_log(file_name+"_sparse_mad_log.json")
+            self.save_results(summary, file_name+".json")
+            
+            print("================================================")
+            print(f"Sparse MAD")
             print(f"Accuracy: {score}")
             print(f"Total Tokens: {token_usage_summary['total_tokens']}")
             print("================================================")

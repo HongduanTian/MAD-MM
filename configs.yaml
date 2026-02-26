@@ -5,23 +5,16 @@ llm_configs:
     top_p: 1
   qwen2.5-7b:
     model: "Qwen/Qwen2.5-7B-Instruct"
-    model_path: "/home/cshdtian/pretrained_models/LargeLanguageModels/Qwen-2.5-7b/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28"
-  qwen2.5-1.5b:
-    model: "Qwen/Qwen2.5-1.5B-Instruct"
-  qwen2.5-3b:
-    model: "Qwen/Qwen2.5-3B-Instruct"
-    model_path: "/home/cshdtian/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct/snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
+    model_path: null
   qwen2.5-math-7b:
     model: "Qwen/Qwen2.5-Math-7B-Instruct"
-    model_path: /home/cshdtian/.cache/huggingface/hub/models--Qwen--Qwen2.5-Math-7B-Instruct/snapshots/ef9926d75ab1d54532f6a30dd5e760355eb9aa4d
+    model_path: null
     max_token_length: 4096
-  qwen2.5-14b:
-    model: "Qwen/Qwen2.5-14B-Instruct"
-  qwen2.5-32b:
-    model: "Qwen/Qwen2.5-32B-Instruct"
-  qwen2.5-72b:
-    model: "Qwen/Qwen2.5-72B-Instruct"
+    temperature: 0.2
+  qwq-32b:
+    model: "Qwen/QWQ-32B-Instruct"
+    model_path: null
   deepseek-math-7b:
     model: "deepseek-ai/deepseek-math-7b-instruct"
-    model_path: "/home/cshdtian/.cache/huggingface/hub/models--deepseek-ai--deepseek-math-7b-instruct/snapshots/0a5828f800a36df0fd7f0ed581b983246c0677ff"
+    model_path: null
     max_token_length: 4096

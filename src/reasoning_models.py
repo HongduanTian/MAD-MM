@@ -11,13 +11,14 @@ from src.utils import if_reach_consensus, extract_answers, dataset_2_process_fn,
 
 class MultiAgentDebate:
     
-    def __init__(self, agent:LanguageModel, dataset_name:str, num_agents:int, max_round:int, prune_strategy:str, strict:bool=False) -> None:
+    def __init__(self, agent:LanguageModel, dataset_name:str, num_agents:int, max_round:int, prune_strategy:str, strict:bool=False, only_voting:bool=False) -> None:
         self.agent = agent
         self.num_agents = num_agents
         self.max_round = max_round
         self.prune_strategy = prune_strategy
         self.strict = strict
         self.dataset_2_process_fn = dataset_2_process_fn(dataset_name)
+        self.only_voting = only_voting
         
         self.debate_log = {}
     
@@ -131,8 +132,6 @@ class MultiAgentDebate:
             if self.prune_strategy == "subjective":
                 new_contexts, masks = self._subjective_prune(questionsList, history[-1])
             elif self.prune_strategy == "objective":
-                new_contexts, masks = self._objective_prune(history[-1], perplexity_history[-1])
-            elif self.prune_strategy == "mixed":
                 new_contexts, masks = self._mixed_prune(questionsList, history[-1], perplexity_history[-1])
             elif self.prune_strategy == "naive":
                 new_contexts = history[-1]
@@ -160,83 +159,6 @@ class MultiAgentDebate:
                 "perplexity_history": perplexity_history,
             })
         return final_results
-
-    def _mixed_prune(self, questionList:List[str], contextList:List[List[str]], perplexityList:List[List[float]]) -> List[str]:
-        ret_contexts, ret_masks = [], []
-        _, masks = self._subjective_prune(questionList, contextList)
-        
-        for original_ctx, mask, ppl in zip(contextList, masks, perplexityList):
-            valid_candidates = []
-            for idx, (ctx, is_valid, ppl) in enumerate(zip(original_ctx, mask, ppl)):
-                if is_valid:
-                    valid_candidates.append({
-                        "index": idx,
-                        "context": ctx,
-                        "ppl": 1./ppl,
-                        "answer": ctx["answer"]
-                    })
-            # no valid candidates, drop all
-            if len(valid_candidates) == 0:
-                ret_contexts.append([])
-                ret_masks.append([False]*len(mask))
-                continue
-            
-            # only one valid candidate, keep it
-            if len(valid_candidates) == 1:
-                ret_contexts.append([valid_candidates[0]["context"]])
-                ret_masks.append(mask)
-                continue
-            
-            all_answers = [candidate["answer"] for candidate in valid_candidates]
-            if len(set(all_answers)) == len(all_answers):
-                if not self.strict:
-                    ret_contexts.append([candidate["context"] for candidate in valid_candidates])
-                    ret_masks.append(mask)
-                else:
-                    ret_contexts.append([])
-                    ret_masks.append([False]*len(mask))
-
-            else:
-                consensus_ans = Counter(all_answers).most_common(1)[0][0]
-                consensus_group = [candidate for candidate in valid_candidates if candidate["answer"] == consensus_ans]
-                ret_contexts.append([candidate["context"] for candidate in consensus_group])
-                
-                new_masks = [False]*len(mask)
-                for candidate in consensus_group:
-                    new_masks[candidate["index"]] = True
-                ret_masks.append(new_masks)
-            
-            # # Case： Consensus exists
-            # counter = Counter(all_answers)
-            # consensus_ans = counter.most_common(1)[0][0]    # find the consensus
-            
-            # consensus_group, non_consensus_group = [], []
-            # for candidate in valid_candidates:
-            #     if candidate["answer"] == consensus_ans:
-            #         consensus_group.append(candidate)
-            #     else:
-            #         non_consensus_group.append(candidate)
-            
-            # min_consensus_ppl = min([candidate["ppl"] for candidate in consensus_group])
-            
-            # if len(non_consensus_group) == 0:
-            #     min_non_consensus_ppl = float('inf')
-            # else:
-            #     min_non_consensus_ppl = min([candidate["ppl"] for candidate in non_consensus_group])
-            
-            # if min_consensus_ppl < min_non_consensus_ppl:
-            #     final_selection = consensus_group
-            # else:
-            #     final_selection = [min(non_consensus_group, key=lambda x: x["ppl"])]
-            
-            # ret_contexts.append([candidate["context"] for candidate in final_selection])
-            
-            # new_mask = [False]*len(mask)
-            # for candidate in final_selection:
-            #     new_mask[candidate["index"]] = True
-            # ret_masks.append(new_mask)
-            
-        return ret_contexts, ret_masks
 
     def _subjective_prune(self, questionList:List[str], contextList:List[List[str]]) -> List[str]:
 
@@ -289,6 +211,136 @@ class MultiAgentDebate:
             masks.append(cur_masks)
             new_contexts.append(cur_selected_contexts)
         return new_contexts, masks
+
+    def get_summary(self):
+        return self.agent.get_token_usage_summary()
+
+    def save_debate_log(self, filename:str):
+        import os
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(self.debate_log, f, ensure_ascii=False, indent=2)
+
+
+class SparseMultiAgentDebate:
+    
+    def __init__(self, agent:LanguageModel, dataset_name:str, num_agents:int=6, max_round:int=2) -> None:
+        self.agent = agent
+        self.num_agents = num_agents
+        self.max_round = max_round
+        self.dataset_2_process_fn = dataset_2_process_fn(dataset_name)
+        
+        self.debate_log = {}
+    
+    
+    def _initial_round(self, prompts:List[str], idList:List) -> Tuple[List, List, List]:
+        """The initial round of debate is performed in the CoT way."""
+        print(f"\n\n>>>>>> The initial round of debate (Only CoT)\n")
+        
+        formatted_prompts = prompts_with_format(prompts, contextList=None, reasoning_mode="cot")
+        
+        agent_response_list = []    # num_agents x batch_size
+        for _ in range(self.num_agents):
+            responsesList, _ = get_response_from_agent(self.agent, formatted_prompts, answer_process=True)
+            agent_response_list.append(responsesList)
+        
+        # log all results
+        for id, prompt, all_resps in zip(idList, formatted_prompts, list(zip(*agent_response_list))):
+            agents = []
+            answer_list = []
+            for resp in all_resps:
+                agents.append({
+                    "prompt": prompt,
+                    "response": resp,
+                })
+
+                answer_list.append(resp["answer"])
+            
+            flag, consensus_answer = if_reach_consensus(answer_list, self.dataset_2_process_fn)
+            
+            self.debate_log[id]["rounds"].append({
+                "round": 1,
+                "agents": agents,
+                "common_answer": consensus_answer,
+                "consensus": flag
+            })
+        return agent_response_list
+    
+    
+    def _debate_with_contexts(self, round:int,questionsList:List[str], contexts:List, idList:List[str]):
+        print(f"\n\n>>>>>> The {round}th round of debate (Sparse MAD)\n")
+        #formatted_prompts = prompts_with_format(questionsList, contexts, reasoning_mode="debate")
+        #assert len(formatted_prompts) == len(questionsList), "The number of formatted prompts should be the same as the number of questions"
+        
+        agent_response_list = []    # num_agents x batch_size
+        for idx in range(self.num_agents):
+            context_idx = [(idx - 1) % self.num_agents, (idx + 1) % self.num_agents]
+            selected_contexts = [[all_ctx[ctx_idx] for ctx_idx in context_idx] for all_ctx in contexts]
+            formatted_prompts = prompts_with_format(questionsList, selected_contexts, reasoning_mode="debate")
+            assert len(formatted_prompts) == len(questionsList), "The number of formatted prompts should be the same as the number of questions"
+            responsesList, _ = get_response_from_agent(self.agent, formatted_prompts, answer_process=True)
+            agent_response_list.append(responsesList)
+        
+        common_answers, consensus_flags = [], []
+        # log all results
+        for id, prompt, all_resps in zip(idList, formatted_prompts, list(zip(*agent_response_list))):
+            agents = []
+            answer_list = []
+            for resp in all_resps:
+                agents.append({
+                    "prompt": prompt,
+                    "response": resp,
+                })
+                answer_list.append(resp["answer"])
+
+            flag, consensus_answer = if_reach_consensus(answer_list, self.dataset_2_process_fn)
+            
+            self.debate_log[id]["rounds"].append({
+                "round": round,
+                "agents": agents,
+                "common_answer": consensus_answer,
+                "consensus": flag
+            })
+            
+            common_answers.append(consensus_answer)
+            consensus_flags.append(flag)
+    
+        return agent_response_list, common_answers, consensus_flags
+    
+    def __call__(self, prompts:Dict):
+        
+        idsList, questionsList, answersList = preprocess_data(prompts)
+        for id, question in zip(idsList, questionsList):
+            self.debate_log[id] = {
+                "question": question,
+                "rounds": []
+            }
+        
+        history = []
+        
+        # The first debate round
+        initial_resps_list = self._initial_round(questionsList, idsList)
+        contexts = [list(item) for item in zip(*initial_resps_list)]
+        history.append(contexts)
+        
+        # Later round of debate
+        for round in range(1, self.max_round):
+            new_contexts = history[-1]
+            resps_list, common_answers, consensus_flags = self._debate_with_contexts(round+1, questionsList, new_contexts, idsList)
+            contexts = [list(item) for item in zip(*resps_list)]
+            history.append(contexts)
+
+        final_results = []
+        for id, quetion, pred, ground_truth, debate_history, consensus_flag in zip(idsList, questionsList, common_answers, answersList, list(zip(*history)), consensus_flags):
+            final_results.append({
+                "id": id,
+                "question": quetion,
+                "pred": pred,
+                "ground_truth": ground_truth,
+                "debate_history": debate_history,
+                "consensus": consensus_flag,
+            })
+        return final_results
 
     def get_summary(self):
         return self.agent.get_token_usage_summary()
