@@ -1,7 +1,7 @@
 <h1 align='center'> Multi-Agent Debate with Memory Masking</h1>
 
 <p align='center'>
-<a href="https://openreview.net/pdf?id=EdTt8nMAMA"><img src="https://img.shields.io/badge/arXiv-openreview.svg" alt="Paper"></a> <a href="https://iclr.cc/"><img src="https://img.shields.io/badge/Pub-ICLR'26-blue" alt="Conf"></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Liscence"></a> <a href=""><img src="https://img.shields.io/badge/Slides%20-D76364" alt="Slides"></a> <a href=""><img src="https://img.shields.io/badge/Poster%20-Ffa500" alt="Poster"></a> <a href=""><img src="https://img.shields.io/badge/CN_Video%20-54b345" alt="CN_Video"></a> <a href=""><img src="https://img.shields.io/badge/EN_Video%20-54b345" alt="EN_Video"></a>
+<a href="https://arxiv.org/pdf/2603.20215"><img src="https://img.shields.io/badge/arXiv-2603.20215.svg" alt="Paper"></a> <a href="https://iclr.cc/"><img src="https://img.shields.io/badge/Pub-ICLR'26-blue" alt="Conf"></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Liscence"></a> <a href=""><img src="https://img.shields.io/badge/Slides%20-D76364" alt="Slides"></a> <a href=""><img src="https://img.shields.io/badge/Poster%20-Ffa500" alt="Poster"></a> <a href=""><img src="https://img.shields.io/badge/CN_Video%20-54b345" alt="CN_Video"></a> <a href=""><img src="https://img.shields.io/badge/EN_Video%20-54b345" alt="EN_Video"></a>
 
 </p>
 
