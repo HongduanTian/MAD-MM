@@ -132,7 +132,7 @@ class MultiAgentDebate:
             if self.prune_strategy == "subjective":
                 new_contexts, masks = self._subjective_prune(questionsList, history[-1])
             elif self.prune_strategy == "objective":
-                new_contexts, masks = self._mixed_prune(questionsList, history[-1], perplexity_history[-1])
+                new_contexts, masks = self._objective_prune(questionsList, history[-1], perplexity_history[-1])
             elif self.prune_strategy == "naive":
                 new_contexts = history[-1]
                 masks = [[True, True, True]] * len(questionsList)
