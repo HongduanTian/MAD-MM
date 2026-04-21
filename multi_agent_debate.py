@@ -69,7 +69,7 @@ def main():
     extract_fn = partial(extract_answers, dataset_name=args.dataset)
     agent = LanguageModel(llm_configs, extract_fn=extract_fn)
     print(f"strict mode: {args.strict}")
-    mad = MultiAgentDebate(agent, dataset_name=args.dataset, num_agents=args.num_agents, max_round=args.max_round, prune_strategy=args.prune_strategy, strict=args.strict, only_voting=args.only_voting)
+    mad = MultiAgentDebate(agent, dataset_name=args.dataset, num_agents=args.num_agents, max_round=args.max_round, prune_strategy=args.prune_strategy, strict=args.strict)
     
     print(f"================================= Task Info =================================")
     print(f"Model: {args.model_name}")

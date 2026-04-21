@@ -11,14 +11,13 @@ from src.utils import if_reach_consensus, extract_answers, dataset_2_process_fn,
 
 class MultiAgentDebate:
     
-    def __init__(self, agent:LanguageModel, dataset_name:str, num_agents:int, max_round:int, prune_strategy:str, strict:bool=False, only_voting:bool=False) -> None:
+    def __init__(self, agent:LanguageModel, dataset_name:str, num_agents:int, max_round:int, prune_strategy:str, strict:bool=False) -> None:
         self.agent = agent
         self.num_agents = num_agents
         self.max_round = max_round
         self.prune_strategy = prune_strategy
         self.strict = strict
         self.dataset_2_process_fn = dataset_2_process_fn(dataset_name)
-        self.only_voting = only_voting
         
         self.debate_log = {}
     
